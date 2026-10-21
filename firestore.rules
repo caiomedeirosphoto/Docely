@@ -1,0 +1,59 @@
+rules_version = '2';
+// Regras de segurança do docely.
+// O painel só funciona para os e-mails abaixo, com e-mail verificado (login com Google já vem verificado).
+// Mesmo que alguém abra a tela do painel, o banco NÃO entrega pedidos de outras pessoas nem deixa alterar nada.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['caiodanielmedeiros96@gmail.com', 'miriellysantosdc@gmail.com'];
+    }
+    function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+
+    // Cardápio e preços: todo mundo lê, só vocês mudam
+    match /config/catalog {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Contador dos números de pedido: só pode subir de 1 em 1
+    match /config/counter {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.n == 1;
+      allow update: if signedIn() && request.resource.data.n == resource.data.n + 1;
+    }
+
+    // Perfil de cada cliente: só a própria pessoa (e vocês) leem
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    match /orders/{id} {
+      // cliente vê só os próprios pedidos; vocês veem todos
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+
+      // cliente cria pedido em nome próprio, sempre começando em "aguardando Pix"
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'aguardando_pix'
+        && request.resource.data.total is number && request.resource.data.total > 0
+        && request.resource.data.items is list && request.resource.data.items.size() > 0 && request.resource.data.items.size() <= 40;
+
+      // cliente só pode: avisar que mandou o comprovante, ou cancelar o próprio pedido não pago
+      allow update: if isAdmin() || (
+        signedIn() && resource.data.uid == request.auth.uid
+        && onlyChanges(['status', 'history', 'proofAt'])
+        && (
+          (request.resource.data.status == 'comprovante' && resource.data.status in ['aguardando_pix', 'recusado'])
+          || (request.resource.data.status == 'cancelado' && resource.data.status in ['aguardando_pix', 'recusado', 'comprovante'])
+        )
+      );
+      allow delete: if false;
+    }
+  }
+}
