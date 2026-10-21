@@ -334,3 +334,68 @@ textarea.input{height:auto;padding:12px 14px;resize:none}
 .how span{width:36px;height:36px;border-radius:11px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;margin-bottom:4px}
 .how b{font-size:13px;line-height:1.2}
 .how small{font-size:11px;color:var(--muted);line-height:1.3}
+
+/* ============ guia de boas-vindas ============ */
+body.gd-open{overflow:hidden}
+.gd{position:fixed;inset:0;z-index:80;background:var(--bg);display:flex;flex-direction:column;max-width:480px;margin:0 auto;padding-top:var(--safe-t);animation:fade .28s var(--ease) both}
+.gd.out{animation:gdout .26s var(--ease) both}
+@keyframes gdout{to{opacity:0;transform:scale(.98)}}
+.gd-top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 0;min-height:48px}
+.gd-count{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.gd-skip{height:36px;padding:0 14px;border-radius:999px;font-weight:700;font-size:14px;color:var(--muted);background:var(--soft)}
+.gd-track-x{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;outline:none}
+.gd-slide{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;overflow-y:auto;display:flex}
+.gd-in{margin:auto 0;width:100%;padding:8px 24px 16px;display:flex;flex-direction:column;gap:18px}
+.gd-slide .gd-in>*{opacity:0;transform:translateY(10px);transition:opacity .4s var(--ease),transform .4s var(--ease)}
+.gd-slide.cur .gd-in>*{opacity:1;transform:none}
+.gd-slide.cur .gd-in>*:nth-child(2){transition-delay:.07s}.gd-slide.cur .gd-in>*:nth-child(3){transition-delay:.14s}.gd-slide.cur .gd-in>*:nth-child(4){transition-delay:.2s}
+.gd-txt h2{font-family:Bricolage,Inter,sans-serif;font-weight:800;font-size:28px;letter-spacing:-.035em;line-height:1.08;margin:6px 0 8px}
+.gd-txt p{margin:0;color:var(--muted);font-size:15px;line-height:1.45}
+.gd-step{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--brand)}
+.gd-logo{font-size:44px}
+.gd-hero{display:flex;justify-content:center;padding:18px 0 4px}
+.gd-pots{display:flex;align-items:flex-end;gap:14px;padding:26px 30px;border-radius:28px;background:var(--brand-tint)}
+.gd-pots>span{display:block;animation:pop .5s var(--ease) both;animation-delay:var(--d)}
+.gd-list{display:flex;flex-direction:column;gap:10px}
+.gd-row,.gd-card{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:13px 14px}
+.gd-row b,.gd-card b{display:block;font-size:15px}
+.gd-row small,.gd-card small{display:block;color:var(--muted);font-size:13px;line-height:1.35;margin-top:2px}
+.gd-ic{flex:0 0 40px;height:40px;border-radius:12px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center}
+.gd-big{background:var(--butter);border-color:transparent}
+.gd-big .gd-ic{background:#fff;color:var(--ink)}
+.gd-big small{color:var(--butter-ink)}
+.gd-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;counter-reset:g}
+.gd-steps li{counter-increment:g;display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:13px 14px;font-size:14.5px;line-height:1.35}
+.gd-steps li::before{content:counter(g);flex:0 0 30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+.gd-note{display:flex;gap:8px;align-items:center;margin:0;font-size:13px;color:var(--muted);font-weight:600}
+.gd-track{flex-direction:column;align-items:stretch;gap:0;padding:16px}
+.gd-tl{display:flex;gap:12px;align-items:flex-start;position:relative;padding-bottom:16px}
+.gd-tl:last-child{padding-bottom:0}
+.gd-tl:not(:last-child)::after{content:"";position:absolute;left:10px;top:24px;bottom:2px;width:2px;background:var(--line)}
+.gd-tl.done:not(:last-child)::after{background:var(--green)}
+.gd-b{flex:0 0 22px;height:22px;border-radius:50%;border:2px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;color:#fff}
+.gd-tl.done .gd-b{background:var(--green);border-color:var(--green)}
+.gd-tl.now .gd-b{border-color:var(--green);box-shadow:0 0 0 4px var(--green-soft)}
+.gd-tl:not(.done):not(.now) b{color:var(--muted)}
+.gd-acts{display:flex;flex-direction:column;gap:10px}
+.gd-act .gd-at{flex:1;min-width:0}
+.gd-app{background:#1C1715}
+.gd-app b{font-family:Bricolage,Inter,sans-serif;font-weight:800;font-size:21px;color:#fff;letter-spacing:-.04em}
+.gd-app i{font-style:normal;color:#E0405F}
+.gd-btn{flex:0 0 auto;height:38px;padding:0 16px;border-radius:999px;background:var(--brand);color:#fff;font-weight:800;font-size:14px}
+.gd-ok{flex:0 0 auto;display:flex;align-items:center;gap:4px;color:var(--green);font-weight:800;font-size:13px}
+.gd-help{background:var(--soft);border-radius:var(--r-lg);padding:12px 14px;font-size:13.5px;animation:fade .25s var(--ease) both}
+.gd-help ol{margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.gd-k{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--line);border-radius:7px;padding:1px 7px;font-weight:700;white-space:nowrap;vertical-align:middle}
+.gd-foot{padding:12px 24px calc(18px + var(--safe-b));display:flex;flex-direction:column;align-items:center;gap:16px}
+.gd-dots{display:flex;gap:4px}
+.gd-dots button{width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.gd-dots button::before{content:"";width:7px;height:7px;border-radius:99px;background:var(--line);transition:width .3s var(--ease),background .3s}
+.gd-dots button.on::before{width:22px;background:var(--brand)}
+@media (max-height:640px){.gd-in{gap:12px}.gd-txt h2{font-size:24px}.gd-logo{font-size:36px}.gd-pots{padding:18px 22px}.gd-row,.gd-card,.gd-steps li{padding:10px 12px}}
+.gd{outline:none}
+.gd-steps li b{display:inline;font-size:inherit}
+.gd-center{text-align:center}
+.gd-center .gd-logo{margin-bottom:6px}
+@media (max-height:640px){.gd-in{gap:10px;padding-top:0}.gd-txt h2{font-size:22px;margin:4px 0 6px}.gd-txt p{font-size:14px}.gd-row small,.gd-card small{font-size:12.5px}.gd-ic{flex-basis:36px;height:36px}.gd-steps li{font-size:13.5px}.gd-foot{gap:10px;padding-top:8px}.gd-hero{padding-top:4px}}
+@media (max-width:340px){.gd-in{padding-left:18px;padding-right:18px}.gd-btn{padding:0 12px}}

@@ -1,5 +1,6 @@
 import { CONFIG } from "./config.js";
 import { data, DEMO } from "./data.js";
+import { initGuide, openGuide, seenGuide, isStandalone, showLocal } from "./guide.js";
 import {
   brl, esc, clone, pad2, itemUnit, itemTotal, cartTotal, cartCount, itemTitle, itemDesc, deliveryDate, partyLead, partyMinDate,
   fmtDate, fmtWhen, ymd, parseYmd, pixPayload, STATUS, effStatus, isActive, isPaid, REJECT_REASONS, waLink, maskPhone, phoneOk, emailOk, startOfDay
@@ -513,7 +514,8 @@ VIEWS.pedidos = () => {
 
 VIEWS.conta = () => {
   if (!user()) return `<main class="screen with-nav"><h1 class="page-title">Conta</h1><div class="pad stack"><div class="card center" style="padding:24px"><div class="avatar" style="background:var(--soft);color:var(--muted)">${I("user", 26, 1.9)}</div><b style="font-size:17px">Entre na sua conta</b><p style="font-size:14px">Pra acompanhar pedidos e salvar seus endereços.</p><a href="#/entrar?next=conta" class="btn press">Entrar ou criar conta</a></div>
-    <button class="menu-item press" style="border-radius:14px" data-a="help"><span class="mi">${I("help", 18)}</span><span class="tx"><b>Fale com a gente</b><small>Pelo WhatsApp</small></span></button></div></main>${bagbar()}${nav("conta")}`;
+    <button class="menu-item press" style="border-radius:14px" data-a="help"><span class="mi">${I("help", 18)}</span><span class="tx"><b>Fale com a gente</b><small>Pelo WhatsApp</small></span></button>
+    <button class="menu-item press" style="border-radius:14px" data-a="guide"><span class="mi">${I("star", 18)}</span><span class="tx"><b>Como usar o app</b><small>Tour rápido, avisos e instalar</small></span></button></div></main>${bagbar()}${nav("conta")}`;
   const p = prof(); const active = data.st.myOrders.filter(isActive).sort((a, b) => b.createdAt - a.createdAt)[0];
   const item = (a, ic, l, sm, href) => `${href ? `<a href="${href}"` : `<button data-a="${a}"`} class="menu-item press"><span class="mi">${I(ic, 18)}</span><span class="tx"><b>${l}</b>${sm ? `<small>${sm}</small>` : ""}</span><span style="color:#CDBFB4">${I("chev", 18, 2.2)}</span>${href ? "</a>" : "</button>"}`;
   return `<main class="screen with-nav" style="background:var(--soft)"><h1 class="page-title" style="background:var(--bg)">Conta</h1>
@@ -521,7 +523,7 @@ VIEWS.conta = () => {
   ${active ? `<a href="${isPaid(active) ? "#/pedido/" : "#/pix/"}${active.id}" class="card press row" style="margin:10px 16px 0;border:1.5px solid var(--brand)"><span style="width:10px;height:10px;border-radius:50%;background:${isPaid(active) ? "var(--green)" : "#E2A31B"}"></span><span style="flex:1"><small class="muted" style="font-weight:700;font-size:11px;letter-spacing:.04em">PEDIDO EM ANDAMENTO</small><b style="display:block;font-size:14px">${orderNo(active)} · ${STATUS[effStatus(active)].label.toLowerCase()}</b></span><span style="color:var(--brand)">${I("chev", 18, 2.2)}</span></a>` : ""}
   <div class="menu-sec"><h3>PEDIDOS</h3>${item("", "receipt", "Meus pedidos", "Acompanhar e pedir de novo", "#/pedidos")}${item("", "bell", "Notificações", "Atualizações dos seus pedidos", "#/notificacoes")}</div>
   <div class="menu-sec"><h3>CONTA</h3>${item("", "pin", "Meus endereços", (p.addresses || []).map((a) => a.label).join(", ") || "Nenhum salvo", "#/enderecos")}${item("", "user", "Dados da conta", "Nome e WhatsApp", "#/dados")}${data.isAdmin() ? item("", "panel", "Painel de pedidos", "Só pra vocês", "#/painel") : ""}</div>
-  <div class="menu-sec"><h3>AJUDA</h3>${item("help", "help", "Fale com a gente", "Pelo WhatsApp")}${item("", "info", "Termos e privacidade", "", "#/termos")}</div>
+  <div class="menu-sec"><h3>AJUDA</h3>${item("help", "help", "Fale com a gente", "Pelo WhatsApp")}${item("guide", "star", "Como usar o app", "Tour rápido, avisos e instalar")}${item("", "info", "Termos e privacidade", "", "#/termos")}</div>
   <div class="pad"><button class="btn-o press" style="color:var(--brand)" data-a="logout">${I("out", 18)} Sair da conta</button><p class="muted" style="text-align:center;font-size:12px;margin:12px 0 0">docely · versão 1.0${DEMO ? " · modo de teste" : ""}</p></div>
   </main>${bagbar()}${nav("conta")}`;
 };
@@ -763,6 +765,7 @@ const ACT = {
     for (const it of o.items || []) { if (it.type === "party") continue; const x = clone(it); delete x.price; delete x.cost; if (x.type === "mousse" && !(byId(cat().mousses, x.mousse) || {}).active) continue; cart.push(x); n++; }
     saveCart(); if (n) { toast("Itens na sacola", "ok"); go("#/sacola"); } else toast("Esses itens não estão disponíveis agora."); },
   pedtab: (el) => { V.ped.tab = el.dataset.k; render(); },
+  guide: () => openGuide(),
   help: () => window.open(waLink(CONFIG.whatsapp, "Oi! Preciso de ajuda com o docely."), "_blank", "noopener"),
   logout: async () => { await data.signOut(); V.ck = null; V.dados = null; toast("Você saiu da conta"); go("#/"); },
   deladdr: async (el) => { const list = [...(prof().addresses || [])]; list.splice(Number(el.dataset.i), 1); await data.saveProfile({ addresses: list }); toast("Endereço apagado"); },
@@ -887,16 +890,44 @@ async function lookupCep(cep) {
 window.addEventListener("hashchange", () => { sessionStorage.setItem("dc_nav", "1"); V.rejecting = null; render(); });
 window.addEventListener("keydown", (e) => { if (e.key === "Escape") { if (V.rejecting) { V.rejecting = null; render(); } else if ((route.path[0] || "") === "entrar") ACT.closeauth(); } });
 
+/* ============ avisos no celular ============ */
+// Quando um pedido muda de status (ou chega pedido/comprovante no painel), mostra um aviso.
+const ADM_MSG = { aguardando_pix: "Novo pedido", comprovante: "Comprovante chegou" };
+function watchAlerts() {
+  const u = user(); if (!u || !data.st.ready) return;
+  const k = "alerted_" + u.uid; const last = LSget(k, 0); let max = last;
+  const fresh = [];
+  for (const n of notifs()) { if (n.at > last) fresh.push([n.title, n.text, n.href]); if (n.at > max) max = n.at; }
+  if (data.isAdmin()) for (const o of data.st.allOrders) for (const h of o.history || []) {
+    if (!ADM_MSG[h.s]) continue; if (h.at > max) max = h.at; if (h.at <= last) continue;
+    fresh.push([ADM_MSG[h.s] + " · " + orderNo(o), `${(o.customer && o.customer.name) || "Cliente"} · ${brl(o.total)}`, "#/painel"]);
+  }
+  LSset(k, Math.max(max, last || Date.now()));
+  if (!last) return; // primeira vez nesse aparelho: só marca, não avisa o que já passou
+  fresh.slice(0, 3).forEach(([t, b, h]) => showLocal(t, b, h));
+}
+
+let guideChecked = false;
+function maybeGuide() {
+  if (guideChecked || !data.st.ready) return; guideChecked = true;
+  const name = parseRoute().path[0] || "inicio";
+  if (seenGuide() || ["painel", "entrar", "pix", "pedido", "termos"].includes(name)) return;
+  // no iPhone o app instalado começa "do zero": aí mostra só a última tela (avisos)
+  setTimeout(() => openGuide(isStandalone() ? { start: "end" } : {}), 350);
+}
+initGuide({ I, pot, looks: () => activeMousses().map((m) => m.look) });
+
 /* ============ início ============ */
 let lastUid = null;
 data.init((kind) => {
   const u = user(); const uid = u ? u.uid : null;
   if (uid !== lastUid) { lastUid = uid; V.ck = null; V.dados = null; V.pr = null; }
   if (kind === "catalog" && V.pr && !V.pr.dirty) V.pr = null;
+  if (kind !== "catalog" && kind !== "profile") watchAlerts();
   // não redesenha enquanto a pessoa digita
   const a = document.activeElement; if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA") && kind !== "auth") return;
   render();
-}).then(render);
+}).then(() => { render(); watchAlerts(); maybeGuide(); });
 render();
 
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
