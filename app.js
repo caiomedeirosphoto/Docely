@@ -90,13 +90,28 @@ function notifs() {
 }
 const unreadCount = () => { const seen = LSget("seen_" + (user() ? user().uid : "x"), 0); return notifs().filter((n) => n.at > seen).length; };
 
+function boxArt(fl, size, cell = 18) {
+  const cols = size > 4 ? 3 : 2; const dots = [];
+  for (const [id, n] of Object.entries(fl || {})) for (let i = 0; i < n; i++) dots.push((byId(cat().doces, id) || {}).color || "#ddd");
+  while (dots.length < size) dots.push("transparent");
+  return `<span style="display:grid;grid-template-columns:repeat(${cols},${cell}px);gap:${Math.round(cell / 4)}px;padding:${Math.round(cell / 3)}px;border-radius:${Math.round(cell / 2)}px;background:rgba(255,255,255,.75);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9)">${dots.map((c) => `<span style="width:${cell}px;height:${cell}px;border-radius:50%;background:${c};box-shadow:inset 0 -${Math.max(2, Math.round(cell / 7))}px 0 rgba(0,0,0,.13)${c === "transparent" ? ";outline:1.5px dashed rgba(0,0,0,.15)" : ""}"></span>`).join("")}</span>`;
+}
+const readyBoxes = () => (cat().readyBoxes || []).filter((b) => b.active !== false && Object.keys(b.flavors || {}).every((id) => (byId(cat().doces, id) || {}).active !== false));
+const boxPrice = (size) => ((cat().boxes || []).find((b) => b.size === size) || {}).price || 0;
+const boxFlavorsText = (fl) => Object.entries(fl || {}).filter(([, n]) => n > 0).map(([id, n]) => n + " " + ((byId(cat().doces, id) || {}).name || id).toLowerCase()).join(", ");
+
 /* ============ telas de quem compra ============ */
 const VIEWS = {};
 
 VIEWS.inicio = () => {
-  const c = cat(); const active = [...data.st.myOrders].filter(isActive).sort((a, b) => b.createdAt - a.createdAt)[0];
+  const c = cat(); const mine = [...data.st.myOrders].sort((a, b) => b.createdAt - a.createdAt);
+  const active = mine.filter(isActive)[0];
+  const last = mine.find((o) => effStatus(o) === "entregue" && o.kind !== "party");
   const top = activeMousses().filter((m) => m.rank > 0).sort((a, b) => a.rank - b.rank).slice(0, 6);
+  const rb = readyBoxes();
   const un = unreadCount();
+  const firstName = user() ? String(prof().name || user().name || "").trim().split(/\s+/)[0] : "";
+  const hr = new Date().getHours(); const hello = hr < 12 ? "Bom dia" : hr < 18 ? "Boa tarde" : "Boa noite";
   let pill = "";
   if (active) {
     const s = effStatus(active); const paid = isPaid(active);
@@ -107,39 +122,53 @@ VIEWS.inicio = () => {
       <span style="flex:1;min-width:0"><small>Pedido ${orderNo(active)}${paid ? " · confirmado" : ""}</small><strong>${esc(txt)}</strong></span>
       <span class="go">${I("chev", 16, 2.6)}</span></a>`;
   }
+  const quick = [["#/cardapio", "Mousses", "cup", "#FFF4C2", "#8A6A00", "cattab:mousse"], ["#/caixinha", "Monte sua caixinha", "gift", "#FFE3EA", "#A3133D"], ["#/encomenda", "Encomenda de festa", "party", "#F6EFC4", "#8E1A3C"]];
+  const deliv = fmtDate(deliveryDate(), "rel");
   return `<main class="screen with-nav">
   <div class="home-top">
     <div class="row between" style="min-height:44px"><div class="logo" aria-label="docely">docely<i>.</i></div>
       <a href="#/notificacoes" class="icon-btn press" aria-label="Notificações${un ? ", " + un + " novas" : ""}">${I("bell", 21, 1.9)}${un ? `<span class="badge">${un}</span>` : ""}</a></div>
-    <div class="hint">${I("clock", 14, 2.4)}<span>Peça até <b>${CONFIG.cutoff.h}h${pad2(CONFIG.cutoff.m)}</b> e receba <b>no próximo dia útil</b></span></div>
+    ${firstName ? `<div class="font-d" style="font-size:22px;font-weight:800;margin-top:-2px">${hello}, ${esc(firstName)}!</div>` : ""}
     <a href="#/cardapio?busca=1" class="search press" aria-label="Buscar no cardápio">${I("search", 18)}<span style="flex:1">Buscar mousse, brigadeiro, caixinha…</span></a>
     ${pill}
   </div>
+  <div class="grid3-q">${quick.map(([h, l, ic, bg, fg, a]) => `<a href="${h}" class="qtile press" ${a ? `data-a="gocat" data-k="${a.split(":")[1]}"` : ""}><span class="tile" style="background:${bg};color:${fg}">${I(ic, 26, 1.8)}</span><span>${l}</span></a>`).join("")}</div>
   <div class="banners" role="list">
     ${c.offer && c.offer.active ? `<a role="listitem" href="#/mousse/${(top[0] || activeMousses()[0] || {}).id || ""}" class="banner press"><span class="tag">${FIRE()}${esc(c.offer.tag || "OFERTA")}</span><h3>${esc(c.offer.title)}</h3><p>${esc(c.offer.text || "")}</p><span class="art"></span><span class="potw">${pot((top[0] || activeMousses()[0] || {}).look, 78, 60)}</span></a>` : ""}
     <a role="listitem" href="#/encomenda" class="banner alt press"><span class="tag">ENCOMENDAS</span><h3>Docinhos pra sua festa</h3><p>De ${c.party.qtys[0]} a ${c.party.qtys[c.party.qtys.length - 1]} unidades</p><span class="art"></span></a>
-    <a role="listitem" href="#/caixinha" class="banner press" style="background:#8E1A3C"><span class="tag">PRESENTE</span><h3>Caixinha com laço</h3><p>Você escolhe os sabores</p><span class="art"></span></a>
   </div>
   ${top.length ? `<section class="sec"><h2 class="sec-h">Mais pedidos <span style="color:var(--brand);display:flex">${FIRE(18)}</span></h2><div class="hscroll">
     ${top.map((m, i) => `<a href="#/mousse/${m.id}" class="top-card press"><div class="img" style="background:${m.look.tile}"><span class="rank">#${i + 1}</span>${pot(m.look, 76, 56)}<span class="plus">${I("plus", 16, 2.8)}</span></div><div class="nm">${esc(m.name)}</div><div class="price">${brl(c.sizes[0].price)}</div></a>`).join("")}
   </div></section>` : ""}
-  <a href="#/cardapio" class="btn-ghost-full press">Ver o cardápio completo ${I("chev", 16, 2.4)}</a>
+  ${rb.length ? `<section class="sec"><h2 class="sec-h">Caixinhas prontas</h2><div class="hscroll">
+    ${rb.map((b) => `<a href="#/caixinha?pronta=${b.id}" class="top-card press"><div class="img" style="background:#FFE3EA;align-items:center;padding:0">${boxArt(b.flavors, b.size, b.size > 4 ? 18 : 24)}<span class="plus">${I("plus", 16, 2.8)}</span></div><div class="nm">Caixinha ${esc(b.name)}</div><div class="muted" style="font-size:12px;margin-top:-4px">${b.size} docinhos · com laço</div><div class="price">${brl(boxPrice(b.size))}</div></a>`).join("")}
+  </div></section>` : ""}
+  ${last ? `<section class="sec" style="padding-left:16px;padding-right:16px"><div class="card row"><span style="width:44px;height:44px;border-radius:13px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0">${I("receipt", 20)}</span><span style="flex:1;min-width:0"><b style="font-size:14px">Bateu saudade?</b><span class="muted" style="display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc((last.items || []).map((i) => i.qty + "× " + itemTitle(c, i)).join(" · "))}</span></span><button class="btn-o brand press" style="width:auto;height:38px;padding:0 12px;font-size:13px" data-a="reorder" data-id="${last.id}">Pedir de novo</button></div></section>` : ""}
+  <section class="sec" style="padding-left:16px;padding-right:16px"><h2 class="sec-h" style="padding:0 0 10px">Como funciona</h2>
+    <div class="how">
+      <div><span>${I("bag", 20, 2)}</span><b>Peça até ${CONFIG.cutoff.h}h${pad2(CONFIG.cutoff.m)}</b><small>Monte do seu jeito</small></div>
+      <div><span>${I("tag", 20, 2)}</span><b>Pague no Pix</b><small>E mande o comprovante</small></div>
+      <div><span>${I("pin", 20, 2)}</span><b>Receba ${esc(deliv.split(",")[0])}</b><small>Em mãos, no seu endereço</small></div>
+    </div>
+    <p class="muted" style="font-size:12px;margin:8px 2px 0">De sexta a domingo, a entrega fica pra segunda.</p></section>
+  <section style="padding:0 16px 18px"><button class="card row press" style="width:100%;text-align:left" data-a="help"><span style="width:44px;height:44px;border-radius:13px;background:#E7F7EE;color:var(--wa-d);display:flex;align-items:center;justify-content:center;flex-shrink:0">${I("wa", 21, 2)}</span><span style="flex:1"><b style="font-size:15px">Fale com a gente</b><span class="muted" style="display:block;font-size:13px">Dúvidas, pedidos especiais ou presentes</span></span><span style="color:#CDBFB4">${I("chev", 18, 2.2)}</span></button></section>
   </main>${bagbar()}${nav("inicio")}`;
 };
 
 VIEWS.cardapio = () => {
   const c = cat(); V.cat = V.cat || { tab: "mousse", q: "" };
-  const s = V.cat; const q = s.q.trim().toLowerCase();
-  const tabs = [["mousse", "Mousses", "cup", "#FFF4C2", "#8A6A00"], ["doce", "Docinhos", "candy", "#FBE6DC", "#8A3A12"], ["caixa", "Caixinhas", "gift", "#FFE3EA", "#A3133D"], ["festa", "Festas", "party", "#F6EFC4", "#8E1A3C"]];
+  const s = V.cat; if (s.tab === "doce") s.tab = "caixa"; const q = s.q.trim().toLowerCase();
+  const tabs = [["mousse", "Mousses", "cup", "#FFF4C2", "#8A6A00"], ["caixa", "Caixinhas", "gift", "#FFE3EA", "#A3133D"], ["festa", "Festas", "party", "#F6EFC4", "#8E1A3C"]];
   const ms = activeMousses().filter((m) => !q || (m.name + " " + m.desc).toLowerCase().includes(q));
-  const ds = c.doces.filter((d) => d.active !== false && (!q || d.name.toLowerCase().includes(q)));
+  const rb = readyBoxes().filter((b) => !q || (b.name + " " + b.desc + " caixinha docinho " + boxFlavorsText(b.flavors)).toLowerCase().includes(q));
+  const showBuild = !q || "caixinha docinho brigadeiro beijinho ninho amendoim monte".includes(q) || c.doces.some((d) => d.name.toLowerCase().includes(q));
   const show = (k) => (q ? true : s.tab === k);
   const mList = ms.map((m) => `<a href="#/mousse/${m.id}" class="list-item press"><span class="tx"><span class="nm">${esc(m.name)}</span><span class="ds">${esc(m.desc)}</span><span class="price" style="margin-top:2px">a partir de ${brl(c.sizes[0].price)}</span></span><span class="thumb" style="background:${m.look.tile}">${pot(m.look)}</span></a>`).join("");
-  const boxes = `<a href="#/caixinha" class="press" style="margin:0 16px 8px;border-radius:20px;overflow:hidden;border:1px solid var(--line);display:flex;flex-direction:column;background:#fff"><img src="img/caixinha.jpg" alt="Caixinha com docinhos e laço" style="width:100%;height:170px;object-fit:cover"><span style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px"><span><b style="display:block;font-size:16px">Caixinha com ${c.boxes.map((b) => b.size).join(" ou ")}</b><span class="muted" style="font-size:13px">Você escolhe os sabores · com laço</span></span><span class="price">a partir de ${brl(Math.min(...c.boxes.map((b) => b.price)))}</span></span></a>`;
-  const dList = ds.map((d) => `<a href="#/caixinha" class="list-item press"><span class="tx"><span class="nm">${esc(d.name)}</span><span class="ds">Na caixinha ou na encomenda</span></span><span class="thumb" style="width:72px;height:72px;background:var(--soft);align-items:center;padding:0"><span class="circ" style="width:40px;height:40px;background:${d.color}"></span></span></a>`).join("");
-  const festa = `<div style="padding:0 16px" class="stack"><div class="grid2">${c.party.qtys.map((n) => `<a href="#/encomenda?q=${n}" class="card press" style="display:flex;flex-direction:column;gap:2px"><b class="font-d" style="font-size:30px;color:var(--brand)">${n}</b><span style="font-size:13px;font-weight:600">docinhos</span><span class="muted" style="font-size:12px">${partyLead(n) === 2 ? "a partir de 2 dias" : "a partir de " + partyLead(n) + " dias"}</span></a>`).join("")}</div>
+  const build = `<a href="#/caixinha" class="press" style="margin:0 16px 8px;border-radius:20px;overflow:hidden;border:1px solid var(--line);display:flex;flex-direction:column;background:#fff"><img src="img/caixinha.jpg" alt="Caixinha com docinhos e laço" style="width:100%;height:170px;object-fit:cover"><span style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px"><span><b style="display:block;font-size:16px">Monte a sua caixinha</b><span class="muted" style="font-size:13px">Com ${c.boxes.map((b) => b.size).join(" ou ")} docinhos · você escolhe os sabores</span></span><span class="price" style="white-space:nowrap">a partir de ${brl(Math.min(...c.boxes.map((b) => b.price)))}</span></span></a>`;
+  const rList = rb.map((b) => `<a href="#/caixinha?pronta=${b.id}" class="list-item press"><span class="tx"><span class="nm">Caixinha ${esc(b.name)}</span><span class="ds">${esc(b.desc)}</span><span class="ds" style="font-size:12px">${esc(boxFlavorsText(b.flavors))}</span><span class="price" style="margin-top:2px">${brl(boxPrice(b.size))}</span></span><span class="thumb" style="background:#FFE3EA;align-items:center;padding:0">${boxArt(b.flavors, b.size, b.size > 4 ? 15 : 20)}</span></a>`).join("");
+  const festa = `<div style="padding:0 16px" class="stack"><div class="grid2">${c.party.qtys.map((n) => `<a href="#/encomenda?q=${n}" class="card press" style="display:flex;flex-direction:column;gap:2px"><b class="font-d" style="font-size:30px;color:var(--brand)">${n}</b><span style="font-size:13px;font-weight:600">docinhos</span><span class="muted" style="font-size:12px">a partir de ${partyLead(n)} dias</span></a>`).join("")}</div>
     <a href="#/encomenda" class="btn press">Montar encomenda</a></div>`;
-  const nothing = q && !ms.length && !ds.length;
+  const nothing = q && !ms.length && !rb.length && !showBuild;
   return `<main class="screen with-nav">
   <div class="home-top"><div class="row" style="min-height:44px"><h1 class="logo" style="margin:0">Cardápio</h1></div>
     <label class="search">${I("search", 18)}<input id="busca" data-bind="cat.q" data-live="1" type="search" placeholder="Buscar mousse, brigadeiro, caixinha…" value="${esc(s.q)}" aria-label="Buscar"></label></div>
@@ -147,7 +176,7 @@ VIEWS.cardapio = () => {
   <div id="cat-results">
   ${nothing ? `<div class="empty"><b>Nada encontrado</b>Tente outro nome, tipo "limão" ou "brigadeiro".</div>` : ""}
   ${show("mousse") && ms.length ? `<section class="sec"><h2 class="sec-h">Mousses</h2>${mList}</section>` : ""}
-  ${(show("doce") || show("caixa")) && (!q || ds.length) ? `<section class="sec">${!q && s.tab === "caixa" ? "" : `<h2 class="sec-h">${s.tab === "caixa" && !q ? "" : "Docinhos"}</h2>`}${!q ? boxes : ""}${s.tab === "doce" || q ? `<h2 class="sec-h" style="margin-top:8px">Sabores de docinho</h2>${dList}` : ""}</section>` : ""}
+  ${show("caixa") && (showBuild || rb.length) ? `<section class="sec"><h2 class="sec-h">Caixinhas de docinhos</h2>${showBuild ? build : ""}${rb.length ? `<h2 class="sec-h" style="margin-top:10px;font-size:17px">Caixinhas prontas</h2>${rList}` : ""}</section>` : ""}
   ${show("festa") && !q ? `<section class="sec"><h2 class="sec-h">Encomendas para festa</h2>${festa}</section>` : ""}
   </div></main>${bagbar()}${nav("cardapio")}`;
 };
@@ -202,14 +231,16 @@ VIEWS.mousse = () => {
 
 VIEWS.caixinha = () => {
   const c = cat(); const editIdx = route.q.has("edit") ? Number(route.q.get("edit")) : -1;
-  const key = "box_" + editIdx;
-  if (!V[key]) { const ex = editIdx >= 0 && cart[editIdx] && cart[editIdx].type === "box" ? cart[editIdx] : null; V[key] = ex ? clone(ex) : { type: "box", size: c.boxes[0].size, flavors: {}, ribbon: c.ribbons[0].id, qty: 1 }; }
+  const pronta = route.q.get("pronta") || ""; const rbx = (c.readyBoxes || []).find((b) => b.id === pronta);
+  const key = "box_" + editIdx + "_" + pronta;
+  if (!V[key]) { const ex = editIdx >= 0 && cart[editIdx] && cart[editIdx].type === "box" ? cart[editIdx] : null;
+    V[key] = ex ? clone(ex) : rbx ? { type: "box", size: rbx.size, flavors: clone(rbx.flavors), ribbon: rbx.ribbon || c.ribbons[0].id, qty: 1, ready: rbx.id } : { type: "box", size: c.boxes[0].size, flavors: {}, ribbon: c.ribbons[0].id, qty: 1 }; }
   const s = V[key]; V.cur = key;
   const used = Object.values(s.flavors).reduce((a, b) => a + b, 0); const full = used >= s.size; const left = s.size - used;
   const price = itemUnit(c, s).price * s.qty;
   return `<main class="screen with-bar">
   <div class="hero photo"><a href="#/cardapio" data-a="back" data-to="#/cardapio" class="float" aria-label="Voltar">${I("back", 20, 2.2)}</a><img src="img/caixinha.jpg" alt="Caixinha com docinhos e laço"></div>
-  <div class="p-head"><h1>Caixinha de docinhos</h1><p>Você escolhe os sabores. Vai fechadinha e com laço, pronta pra presentear.</p></div>
+  <div class="p-head"><h1>${rbx ? "Caixinha " + esc(rbx.name) : "Monte sua caixinha"}</h1><p>${rbx ? esc(rbx.desc) + " Quer trocar algum sabor? É só mexer abaixo." : "Você escolhe os sabores. Vai fechadinha e com laço, pronta pra presentear."}</p></div>
   <section class="grp"><div class="grp-h"><div><h2>Tamanho da caixinha</h2><small>Escolha 1 opção</small></div><span class="tag req">OBRIGATÓRIO</span></div>
     <div role="radiogroup">${c.boxes.map((b) => `<button class="opt press" role="radio" aria-checked="${s.size === b.size}" data-a="bsize" data-v="${b.size}"><span class="tx"><b>Caixinha com ${b.size}</b><span class="base">${brl(b.price)}</span></span><span class="mark">${I("check", 13, 3.4)}</span></button>`).join("")}</div></section>
   <section class="grp"><div class="grp-h"><div><h2>Escolha os sabores</h2><small>${used} de ${s.size} escolhidos</small></div><span class="tag ${full ? "ok" : "req"}">${full ? "PRONTO" : "OBRIGATÓRIO"}</span></div>
@@ -383,7 +414,7 @@ VIEWS.pix = () => {
     <div class="pad stack"><div class="card"><div style="font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.04em">MOTIVO</div><div style="font-weight:700;margin-top:4px">${esc(o.rejectReason || "Pagamento não identificado")}</div><div class="muted" style="font-size:13px;margin-top:2px">Valor do pedido: ${brl(o.total)}</div></div>
     <div class="note">${I("clock", 18, 2.2)}<span>O pedido é cancelado sozinho se o Pix não for confirmado em <b data-countdown="${o.pixExpiresAt}">${countdown(o.pixExpiresAt)}</b>.</span></div>
     <button class="btn press" data-a="retrypix" data-id="${o.id}">Ver o Pix e tentar de novo</button>
-    <a class="btn-o wa press" href="${waLink(CONFIG.whatsapp, "Oi! Tive um problema com o Pix do pedido " + orderNo(o) + ".")}" target="_blank" rel="noopener">Falar com a gente no WhatsApp</a>
+    <a class="btn-o wa press" href="${waLink(CONFIG.whatsapp, "Oi! Tive um problema com o Pix do pedido " + orderNo(o) + ".")}" target="_blank" rel="noopener">Fale com a gente no WhatsApp</a>
     <button class="link" style="align-self:center" data-a="cancelorder" data-id="${o.id}">Cancelar pedido</button></div></main>`;
   const payload = pixPayload({ key: CONFIG.pixKey, name: CONFIG.pixName, city: CONFIG.pixCity, amount: o.total, txid: "DOCELY" + String(o.number).padStart(4, "0") });
   return `<main class="screen" style="background:var(--soft);padding-bottom:30px">${bar("Pagar com Pix", "#/pedidos")}
@@ -482,7 +513,7 @@ VIEWS.pedidos = () => {
 
 VIEWS.conta = () => {
   if (!user()) return `<main class="screen with-nav"><h1 class="page-title">Conta</h1><div class="pad stack"><div class="card center" style="padding:24px"><div class="avatar" style="background:var(--soft);color:var(--muted)">${I("user", 26, 1.9)}</div><b style="font-size:17px">Entre na sua conta</b><p style="font-size:14px">Pra acompanhar pedidos e salvar seus endereços.</p><a href="#/entrar?next=conta" class="btn press">Entrar ou criar conta</a></div>
-    <button class="menu-item press" style="border-radius:14px" data-a="help"><span class="mi">${I("help", 18)}</span><span class="tx"><b>Falar com a gente</b><small>Pelo WhatsApp</small></span></button></div></main>${bagbar()}${nav("conta")}`;
+    <button class="menu-item press" style="border-radius:14px" data-a="help"><span class="mi">${I("help", 18)}</span><span class="tx"><b>Fale com a gente</b><small>Pelo WhatsApp</small></span></button></div></main>${bagbar()}${nav("conta")}`;
   const p = prof(); const active = data.st.myOrders.filter(isActive).sort((a, b) => b.createdAt - a.createdAt)[0];
   const item = (a, ic, l, sm, href) => `${href ? `<a href="${href}"` : `<button data-a="${a}"`} class="menu-item press"><span class="mi">${I(ic, 18)}</span><span class="tx"><b>${l}</b>${sm ? `<small>${sm}</small>` : ""}</span><span style="color:#CDBFB4">${I("chev", 18, 2.2)}</span>${href ? "</a>" : "</button>"}`;
   return `<main class="screen with-nav" style="background:var(--soft)"><h1 class="page-title" style="background:var(--bg)">Conta</h1>
@@ -490,7 +521,7 @@ VIEWS.conta = () => {
   ${active ? `<a href="${isPaid(active) ? "#/pedido/" : "#/pix/"}${active.id}" class="card press row" style="margin:10px 16px 0;border:1.5px solid var(--brand)"><span style="width:10px;height:10px;border-radius:50%;background:${isPaid(active) ? "var(--green)" : "#E2A31B"}"></span><span style="flex:1"><small class="muted" style="font-weight:700;font-size:11px;letter-spacing:.04em">PEDIDO EM ANDAMENTO</small><b style="display:block;font-size:14px">${orderNo(active)} · ${STATUS[effStatus(active)].label.toLowerCase()}</b></span><span style="color:var(--brand)">${I("chev", 18, 2.2)}</span></a>` : ""}
   <div class="menu-sec"><h3>PEDIDOS</h3>${item("", "receipt", "Meus pedidos", "Acompanhar e pedir de novo", "#/pedidos")}${item("", "bell", "Notificações", "Atualizações dos seus pedidos", "#/notificacoes")}</div>
   <div class="menu-sec"><h3>CONTA</h3>${item("", "pin", "Meus endereços", (p.addresses || []).map((a) => a.label).join(", ") || "Nenhum salvo", "#/enderecos")}${item("", "user", "Dados da conta", "Nome e WhatsApp", "#/dados")}${data.isAdmin() ? item("", "panel", "Painel de pedidos", "Só pra vocês", "#/painel") : ""}</div>
-  <div class="menu-sec"><h3>AJUDA</h3>${item("help", "help", "Falar com a gente", "Pelo WhatsApp")}${item("", "info", "Termos e privacidade", "", "#/termos")}</div>
+  <div class="menu-sec"><h3>AJUDA</h3>${item("help", "help", "Fale com a gente", "Pelo WhatsApp")}${item("", "info", "Termos e privacidade", "", "#/termos")}</div>
   <div class="pad"><button class="btn-o press" style="color:var(--brand)" data-a="logout">${I("out", 18)} Sair da conta</button><p class="muted" style="text-align:center;font-size:12px;margin:12px 0 0">docely · versão 1.0${DEMO ? " · modo de teste" : ""}</p></div>
   </main>${bagbar()}${nav("conta")}`;
 };
@@ -623,6 +654,7 @@ function adminPrecos() {
       <div class="a-sm">Desligue um sabor pra ele sumir do cardápio (ex.: acabou o ingrediente).</div></div>
     <h2 class="a-h">GELEIAS E ADICIONAIS</h2><div class="a-card">${c.jellies.map((j, i) => row(j.name, `jellies.${i}.price`, j.price, `jellies.${i}.cost`, j.cost)).join("")}${c.extras.filter((e) => e.id !== "semBase").map((e) => { const i = c.extras.indexOf(e); return row(e.name, `extras.${i}.price`, e.price, `extras.${i}.cost`, e.cost); }).join("")}</div>
     <h2 class="a-h">CAIXINHAS</h2><div class="a-card">${c.boxes.map((b, i) => row("Caixinha com " + b.size, `boxes.${i}.price`, b.price, `boxes.${i}.cost`, b.cost)).join("")}</div>
+    <h2 class="a-h">CAIXINHAS PRONTAS</h2><div class="a-card">${(c.readyBoxes || []).map((b, i) => `<div class="a-row" style="padding:6px 0"><span style="flex:1;font-size:14px">${esc(b.name)} <span class="a-sm">· ${b.size} docinhos</span></span><button class="toggle" role="switch" aria-label="Mostrar caixinha ${esc(b.name)}" aria-checked="${b.active !== false}" data-a="prtoggle" data-path="readyBoxes.${i}.active"></button></div>`).join("")}</div>
     <h2 class="a-h">SABORES DE DOCINHO</h2><div class="a-card">${c.doces.map((d, i) => `<div class="a-row" style="padding:6px 0"><span class="circ" style="width:18px;height:18px;background:${d.color}"></span><span style="flex:1;font-size:14px">${esc(d.name)}</span><button class="toggle" role="switch" aria-label="Mostrar ${esc(d.name)}" aria-checked="${d.active !== false}" data-a="prtoggle" data-path="doces.${i}.active"></button></div>`).join("")}</div>
     <h2 class="a-h">ENCOMENDAS</h2><div class="a-card">${row("Cada docinho", "party.pricePerDoce", c.party.pricePerDoce, "party.costPerDoce", c.party.costPerDoce)}${row("Cada mousse", "party.moussePrice", c.party.moussePrice, "party.mousseCost", c.party.mousseCost)}</div>
     <h2 class="a-h">BANNER DE DESTAQUE</h2><div class="a-card"><div class="a-row"><span style="flex:1;font-size:14px">Mostrar no início</span><button class="toggle" role="switch" aria-label="Mostrar banner" aria-checked="${!!c.offer.active}" data-a="prtoggle" data-path="offer.active"></button></div>
@@ -687,13 +719,14 @@ const back = (to) => { if (history.length > 1 && sessionStorage.getItem("dc_nav"
 const ACT = {
   back: (el, e) => { e.preventDefault(); back(el.dataset.to); },
   cattab: (el) => { V.cat.tab = el.dataset.k; render(); },
+  gocat: (el) => { V.cat = V.cat || { tab: "mousse", q: "" }; V.cat.tab = el.dataset.k; V.cat.q = ""; go("#/cardapio"); },
   msize: (el) => { V[V.cur].size = el.dataset.v; render(); },
   mjelly: (el) => { V[V.cur].jelly = el.dataset.v; render(); },
   mextra: (el) => { const s = V[V.cur]; const id = el.dataset.v; s.extras = s.extras.includes(id) ? s.extras.filter((x) => x !== id) : [...s.extras, id]; render(); },
   mqty: (el) => { const s = V[V.cur]; s.qty = Math.max(1, Math.min(30, s.qty + Number(el.dataset.d))); render(); },
   madd: () => addToCart(V.cur, "Adicionado à sacola"),
-  bsize: (el) => { const s = V[V.cur]; s.size = Number(el.dataset.v); let used = 0; for (const k of Object.keys(s.flavors)) { const n = Math.min(s.flavors[k], s.size - used); s.flavors[k] = n; used += n; } render(); },
-  bflav: (el) => { const s = V[V.cur]; const id = el.dataset.id; const used = Object.values(s.flavors).reduce((a, b) => a + b, 0); const d = Number(el.dataset.d); if (d > 0 && used >= s.size) return; s.flavors[id] = Math.max(0, (s.flavors[id] || 0) + d); render(); },
+  bsize: (el) => { const s = V[V.cur]; s.size = Number(el.dataset.v); delete s.ready; let used = 0; for (const k of Object.keys(s.flavors)) { const n = Math.min(s.flavors[k], s.size - used); s.flavors[k] = n; used += n; } render(); },
+  bflav: (el) => { const s = V[V.cur]; const id = el.dataset.id; const used = Object.values(s.flavors).reduce((a, b) => a + b, 0); const d = Number(el.dataset.d); if (d > 0 && used >= s.size) return; s.flavors[id] = Math.max(0, (s.flavors[id] || 0) + d); delete s.ready; render(); },
   bribbon: (el) => { V[V.cur].ribbon = el.dataset.v; render(); },
   bqty: (el) => { const s = V[V.cur]; s.qty = Math.max(1, Math.min(20, s.qty + Number(el.dataset.d))); render(); },
   badd: () => { const s = V[V.cur]; const used = Object.values(s.flavors).reduce((a, b) => a + b, 0); if (used < s.size) { toast("Escolha mais " + (s.size - used) + " sabor" + (s.size - used > 1 ? "es" : "")); return; } addToCart(V.cur, "Caixinha na sacola"); },

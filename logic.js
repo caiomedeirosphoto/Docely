@@ -44,6 +44,12 @@ export const DEFAULT_CATALOG = {
     { id: "ninho", name: "Ninho", color: "#F4E9CF", active: true }
   ],
   boxes: [{ size: 4, price: 12, cost: 4 }, { size: 6, price: 17, cost: 6 }],
+  readyBoxes: [
+    { id: "classica", name: "Clássica", desc: "Brigadeiro e beijinho, a dupla que nunca falha.", size: 4, flavors: { brigadeiro: 2, beijinho: 2 }, ribbon: "dourado", active: true },
+    { id: "sortida", name: "Sortida", desc: "Um de cada sabor, pra provar tudo.", size: 4, flavors: { brigadeiro: 1, amendoim: 1, beijinho: 1, ninho: 1 }, ribbon: "rosa", active: true },
+    { id: "chocolatuda", name: "Chocolatuda", desc: "Seis brigadeiros pra quem é do chocolate.", size: 6, flavors: { brigadeiro: 6 }, ribbon: "dourado", active: true },
+    { id: "festa", name: "Festinha", desc: "Seis docinhos variados, cara de festa.", size: 6, flavors: { brigadeiro: 2, ninho: 2, amendoim: 1, beijinho: 1 }, ribbon: "branco", active: true }
+  ],
   ribbons: [{ id: "dourado", name: "Dourado", color: "#B98545" }, { id: "rosa", name: "Rosa", color: "#E79AB0" }, { id: "branco", name: "Branco", color: "#FFFFFF" }],
   party: { pricePerDoce: 1.6, costPerDoce: 0.6, moussePrice: 7, mousseCost: 2, qtys: [25, 50, 100, 200] }
 };
@@ -85,7 +91,7 @@ export function cartCount(cart) { return cart.reduce((s, it) => s + (it.type ===
 
 export function itemTitle(cat, it) {
   if (it.type === "mousse") return (byId(cat.mousses, it.mousse) || {}).name || "Mousse";
-  if (it.type === "box") return "Caixinha com " + it.size;
+  if (it.type === "box") { const r = it.ready && (cat.readyBoxes || []).find((x) => x.id === it.ready); return r ? "Caixinha " + r.name + " (" + it.size + ")" : "Caixinha com " + it.size; }
   if (it.type === "party") return "Encomenda · " + it.total + " docinhos";
   return "Item";
 }

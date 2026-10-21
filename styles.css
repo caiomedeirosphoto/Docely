@@ -322,3 +322,13 @@ textarea.input{height:auto;padding:12px 14px;resize:none}
 .adm .toggle[aria-checked="true"]{background:var(--green)}
 .adm .toggle[aria-checked="true"]::after{left:23px}
 .adm .sheet{background:#232326;color:var(--a-ink)}
+
+/* início: atalhos e como funciona */
+.grid3-q{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:2px 16px 16px}
+.qtile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-size:12px;font-weight:700;line-height:1.2;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 6px}
+.qtile .tile{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.how>div{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 10px;display:flex;flex-direction:column;gap:4px}
+.how span{width:36px;height:36px;border-radius:11px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.how b{font-size:13px;line-height:1.2}
+.how small{font-size:11px;color:var(--muted);line-height:1.3}
