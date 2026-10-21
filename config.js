@@ -17,7 +17,7 @@ export const CONFIG = {
   pixCity: "FLORIANOPOLIS",
   pixHours: 24,
   // WhatsApp que recebe os comprovantes (só números, com 55 + DDD)
-  whatsapp: "554884120288",
+  whatsapp: "5548984120288",
   // Horário limite para entrega no próximo dia útil
   cutoff: { h: 22, m: 30 }
 };
