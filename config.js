@@ -2,12 +2,12 @@
 // pelos dados do projeto (Console do Firebase > Configurações do projeto > Seus apps).
 export const CONFIG = {
   firebase: {
-    apiKey: "COLE_AQUI",
-    authDomain: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: "AIzaSyCvCZNm1Q279PRcdNqP2zWAKozFKkfjGX0",
+    authDomain: "docely-4f675.firebaseapp.com",
+    projectId: "docely-4f675",
+    storageBucket: "docely-4f675.firebasestorage.app",
+    messagingSenderId: "112771933207",
+    appId: "1:112771933207:web:267662748df398ccaf2852"
   },
   // Quem pode abrir o painel (e-mails das contas de vocês)
   admins: ["caiodanielmedeiros96@gmail.com", "miriellysantosdc@gmail.com"],
