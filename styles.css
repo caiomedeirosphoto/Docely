@@ -47,7 +47,7 @@ img{display:block;max-width:100%}
 .press:active{transform:scale(.97)}
 
 /* top bars */
-.home-top{padding:14px 16px 8px;display:flex;flex-direction:column;gap:12px}
+.home-top{padding:16px 16px 18px;display:flex;flex-direction:column;gap:16px}
 .row{display:flex;align-items:center;gap:12px}
 .between{justify-content:space-between}
 .icon-btn{width:44px;height:44px;border-radius:14px;background:var(--soft);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
@@ -79,7 +79,8 @@ img{display:block;max-width:100%}
 .cat[aria-pressed="true"]{font-weight:800}
 
 /* banners */
-.banners{display:flex;gap:10px;padding:0 16px 18px;overflow-x:auto;scroll-snap-type:x mandatory}
+.banners{display:flex;gap:12px;padding:4px 16px 22px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:16px}
+.banners::after{content:"";flex:0 0 4px}
 .banner{flex:0 0 86%;max-width:330px;scroll-snap-align:start;min-height:132px;border-radius:20px;background:var(--brand);color:#fff;padding:16px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
 .banner.alt{background:var(--ink)}
 .banner .tag{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;background:#fff;color:var(--brand);font-size:11px;font-weight:800;padding:4px 9px;border-radius:99px}
@@ -90,9 +91,10 @@ img{display:block;max-width:100%}
 .banner .potw{position:absolute;right:22px;bottom:18px}
 
 /* sections */
-.sec{padding:0 0 18px}
+.sec{padding:0 0 24px}
 .sec-h{display:flex;align-items:center;gap:6px;margin:0;padding:0 16px 10px;font-family:Bricolage,Inter,sans-serif;font-size:20px;font-weight:800;letter-spacing:-.02em}
-.hscroll{display:flex;gap:12px;padding:0 16px;overflow-x:auto}
+.hscroll{display:flex;gap:12px;padding:0 16px;overflow-x:auto;scroll-padding-inline:16px}
+.hscroll::after,.cats::after{content:"";flex:0 0 4px}
 .top-card{flex:0 0 148px;display:flex;flex-direction:column;gap:6px}
 .top-card .img{height:132px;border-radius:18px;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:16px;overflow:hidden}
 .rank{position:absolute;top:8px;left:8px;background:var(--ink);color:#fff;font-size:11px;font-weight:800;padding:3px 7px;border-radius:8px}
@@ -324,7 +326,7 @@ textarea.input{height:auto;padding:12px 14px;resize:none}
 .adm .sheet{background:#232326;color:var(--a-ink)}
 
 /* início: atalhos e como funciona */
-.grid3-q{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:2px 16px 16px}
+.grid3-q{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px 20px}
 .qtile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-size:12px;font-weight:700;line-height:1.2;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px 6px}
 .qtile .tile{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center}
 .how{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
