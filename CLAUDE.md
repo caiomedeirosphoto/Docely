@@ -27,3 +27,6 @@ Marca: **docely** (logo "docely" com ponto framboesa; ícone "d." com ponto fram
 ## Visual
 Fundo creme #FBF7F4, texto cacau #2B1D16, framboesa #B4234D (botões), manteiga #F6EFC4 (avisos), verde #2F7D4F (confirmado). Painel em grafite escuro (#161618) com botões de contorno (texto verde/vermelho claro).
 Fontes locais: Bricolage Grotesque (títulos) e Inter (texto). Sem barras de rolagem visíveis. Barra de navegação: Início, Cardápio, Pedidos, Conta.
+
+## Prévia
+Artefato de prévia (modo de teste): https://claude.ai/artifact/MNin7WFxibmuf4ZEFWgMFr — página em `.dev/preview/docely.html` + arquivos do app publicados junto. Atualizar a cada mudança na `dev`.
